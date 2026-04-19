@@ -6,10 +6,10 @@ export type FetchResult =
   | { ok: false; status: number };
 
 async function _fetchPortfolioData(): Promise<FetchResult> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_DATA_API_URL;
 
   if (!apiUrl) {
-    console.warn('[Vault] NEXT_PUBLIC_API_URL is not set');
+    console.warn('[Vault] NEXT_PUBLIC_DATA_API_URL is not set');
     return { ok: false, status: 0 };
   }
 
