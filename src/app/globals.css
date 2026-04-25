@@ -1,33 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  /* User colors — set via <html> style prop in layout.tsx */
-  /* Values below are last-resort CSS fallbacks only       */
-  --accent:    #3A7BFF;
-  --secondary: #161B27;
-  --highlight: #3A7BFF;
+  /* ── BRAND COLORS (fixed — not user-customizable) ─────── */
+  --accent:         #C8A96E;
+  --secondary:      #F0EDE6;
+  --highlight:      #C8A96E;
+  --accent-light:   rgba(200,169,110,0.10);
+  --accent-border:  rgba(200,169,110,0.35);
+  --highlight-glow: rgba(200,169,110,0.15);
 
-  /* Derived — computed from user colors, never set manually */
-  --accent-glow:    color-mix(in srgb, var(--accent)    15%, transparent);
-  --accent-border:  color-mix(in srgb, var(--accent)    30%, transparent);
-  --highlight-glow: color-mix(in srgb, var(--highlight) 20%, transparent);
-  --secondary-soft: color-mix(in srgb, var(--secondary) 60%, var(--vault-bg));
+  /* ── BASE ─────────────────────────────────────────────── */
+  --bella-bg:         #F7F5F0;
+  --bella-surface:    #FFFFFF;
+  --bella-surface-2:  #F0EDE6;
+  --bella-border:     rgba(26,24,20,0.08);
+  --bella-border-mid: rgba(26,24,20,0.15);
+  --bella-ink:        #1A1814;
+  --bella-ink-soft:   #3D3A35;
+  --bella-mid:        #8C8880;
+  --bella-success:    #4A9B6F;
+  --bella-error:      #C0392B;
+  --bella-font-serif: 'Cormorant Garamond', Georgia, serif;
+  --bella-font-body:  'DM Sans', sans-serif;
+  --bella-font-mono:  'DM Mono', monospace;
 
-  /* Base palette — fixed, never user-customizable */
-  --vault-bg:             #080A0F;
-  --vault-surface:        #0F1117;
-  --vault-border:         rgba(255,255,255,0.07);
-  --vault-border-mid:     rgba(255,255,255,0.13);
-  --vault-text-primary:   #F0F2F8;
-  --vault-text-secondary: #6B7280;
-  --vault-text-muted:     #374151;
-  --vault-success:        #22C55E;
-  --vault-error:          #EF4444;
-  --vault-font-display:   'Clash Display', sans-serif;
-  --vault-font-body:      'Satoshi', sans-serif;
-  --vault-font-mono:      'JetBrains Mono', monospace;
-
-  /* Spacing */
+  /* ── SPACING ──────────────────────────────────────────── */
   --space-xs:  4px;
   --space-sm:  8px;
   --space-md:  16px;
@@ -37,15 +34,17 @@
   --space-3xl: 96px;
 }
 
-/* Fallback for browsers without color-mix() support */
-@supports not (color: color-mix(in srgb, red, blue)) {
-  :root {
-    --accent-glow:    rgba(58, 123, 255, 0.15);
-    --accent-border:  rgba(58, 123, 255, 0.30);
-    --highlight-glow: rgba(58, 123, 255, 0.20);
-    --secondary-soft: #0F1117;
-  }
+/* Grain texture — what makes it feel printed, not rendered */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 999;
 }
+
 
 *,
 *::before,
@@ -60,11 +59,12 @@ html {
 }
 
 body {
-  background: var(--vault-bg);
-  color: var(--vault-text-primary);
-  font-family: var(--vault-font-body);
+  background: var(--bella-bg);
+  color: var(--bella-ink);
+  font-family: var(--bella-font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

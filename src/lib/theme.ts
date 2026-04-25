@@ -1,7 +1,7 @@
 const DEFAULTS = {
-  accent:    '#3A7BFF',
-  secondary: '#161B27',
-  highlight: '#3A7BFF',
+  accent:    '#C8A96E',
+  secondary: '#F0EDE6',
+  highlight: '#C8A96E',
 } as const;
 
 export function isValidHex(value: string): boolean {
@@ -16,7 +16,7 @@ export function safeColor(
   const trimmed = value?.trim().replace(/^["']|["']$/g, '');
   if (!trimmed || !isValidHex(trimmed)) {
     if (process.env.NODE_ENV === 'development' && value) {
-      console.warn(`[Vault] Invalid color for ${key}: "${value}" — using default ${fallback}`);
+      console.warn(`[Bella] Invalid color for ${key}: "${value}" — using default ${fallback}`);
     }
     return fallback;
   }

@@ -1,288 +1,70 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { FiGithub, FiLinkedin, FiInstagram, FiYoutube, FiFacebook } from 'react-icons/fi';
-import { FaXTwitter } from 'react-icons/fa6';
-import { SiBehance, SiDribbble, SiPinterest, SiTiktok, SiVimeo, SiMedium } from 'react-icons/si';
-import { PortfolioData, SocialLink } from '@/types';
+import { PortfolioData } from '@/types';
 import { isFilled } from '@/lib/is-filled';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+const LightPillar = dynamic(() => import('./LightPillar'), { ssr: false });
 
 interface HeroProps {
-  data?: PortfolioData['hero'];
+  data?:      PortfolioData['hero'];
   available?: boolean;
 }
 
-// ─── Platform icon map ────────────────────────────────────────────────────────
-
-type IconComponent = React.ComponentType<{ size?: number }>;
-
-const PLATFORM_ICONS: Record<string, IconComponent> = {
-  github:    FiGithub,
-  linkedin:  FiLinkedin,
-  twitter:   FaXTwitter,
-  instagram: FiInstagram,
-  behance:   SiBehance,
-  dribbble:  SiDribbble,
-  youtube:   FiYoutube,
-  pinterest: SiPinterest,
-  facebook:  FiFacebook,
-  tiktok:    SiTiktok,
-  vimeo:     SiVimeo,
-  medium:    SiMedium,
-};
-
-// ─── Aurora background ────────────────────────────────────────────────────────
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const sanitised = hex.trim().replace(/^#/, '');
-  if (sanitised.length === 3) {
-    const [r, g, b] = sanitised.split('').map((c) => parseInt(c + c, 16));
-    return { r, g, b };
-  }
-  if (sanitised.length === 6) {
-    const r = parseInt(sanitised.slice(0, 2), 16);
-    const g = parseInt(sanitised.slice(2, 4), 16);
-    const b = parseInt(sanitised.slice(4, 6), 16);
-    return { r, g, b };
-  }
-  return null;
-}
-
-interface AuroraProps {
-  isMobile: boolean;
-  reducedMotion: boolean;
-}
-
-function Aurora({ isMobile, reducedMotion }: AuroraProps): React.ReactElement {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const accentValue = getComputedStyle(document.documentElement)
-      .getPropertyValue('--accent')
-      .trim();
-    const rgb = hexToRgb(accentValue) ?? { r: 58, g: 123, b: 255 };
-    el.style.setProperty('--accent-r', String(rgb.r));
-    el.style.setProperty('--accent-g', String(rgb.g));
-    el.style.setProperty('--accent-b', String(rgb.b));
-  }, []);
-
-  const baseOpacity = isMobile ? 0.5 : 1;
-  const opacity     = reducedMotion ? 0.5 : baseOpacity;
-
-  return (
-    <div
-      ref={wrapperRef}
-      aria-hidden="true"
-      style={{
-        position:  'absolute',
-        inset:     0,
-        zIndex:    0,
-        opacity,
-        animation: reducedMotion ? 'none' : 'aurora-shift 12s ease-in-out infinite alternate',
-        background: `
-          radial-gradient(ellipse 70% 60% at 20% 50%,
-            rgba(var(--accent-r, 58), var(--accent-g, 123), var(--accent-b, 255), 0.18) 0%,
-            transparent 70%),
-          radial-gradient(ellipse 50% 40% at 80% 30%,
-            rgba(var(--accent-r, 58), var(--accent-g, 123), var(--accent-b, 255), 0.08) 0%,
-            transparent 60%),
-          radial-gradient(ellipse 40% 50% at 60% 80%,
-            rgba(var(--accent-r, 58), var(--accent-g, 123), var(--accent-b, 255), 0.06) 0%,
-            transparent 60%)
-        `,
-      }}
-    />
-  );
-}
-
-// ─── Grid overlay ─────────────────────────────────────────────────────────────
-
-function GridOverlay(): React.ReactElement {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        position:        'absolute',
-        inset:           0,
-        zIndex:          0,
-        backgroundImage: `
-          linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
-        `,
-        backgroundSize:   '48px 48px',
-        maskImage:        'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)',
-        WebkitMaskImage:  'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)',
-      }}
-    />
-  );
-}
-
-// ─── Profile image card ────────────────────────────────────────────────────────
-
-interface ProfileImageCardProps {
-  image: string;
-  name: string;
-}
-
-function ProfileImageCard({ image, name }: ProfileImageCardProps): React.ReactElement {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width:        '100%',
-        maxWidth:     '320px',
-        aspectRatio:  '1 / 1',
-        border:       `1px solid ${hovered ? 'var(--accent-border)' : 'var(--vault-border)'}`,
-        borderRadius: '16px',
-        overflow:     'hidden',
-        position:     'relative',
-        boxShadow:    hovered ? '0 0 40px var(--highlight-glow)' : 'none',
-        transition:   'border-color 0.3s ease, box-shadow 0.3s ease',
-        background:   'var(--vault-surface)',
-        flexShrink:   0,
-      }}
-    >
-      <Image
-        src={image}
-        alt={name}
-        fill
-        sizes="(max-width: 768px) 100vw, 320px"
-        style={{ objectFit: 'cover' }}
-        priority
-      />
-      {/* Subtle bottom gradient overlay */}
-      <div
-        aria-hidden="true"
-        style={{
-          position:      'absolute',
-          inset:         0,
-          background:    'linear-gradient(to top, rgba(8,10,15,0.5) 0%, transparent 50%)',
-          pointerEvents: 'none',
-        }}
-      />
-    </div>
-  );
-}
-
-// ─── Social links ──────────────────────────────────────────────────────────────
-
-interface SocialLinksProps {
-  links?: SocialLink[];
-}
-
-function SocialLinks({ links }: SocialLinksProps): React.ReactElement | null {
-  const validLinks = (links ?? []).filter(
-    (l) => isFilled(l.url) && isFilled(l.platform)
-  );
-  if (validLinks.length === 0) return null;
-
-  return (
-    <nav
-      aria-label="Social links"
-      style={{
-        display:      'flex',
-        alignItems:   'center',
-        gap:          '20px',
-        marginTop:    '8px',
-        marginBottom: '32px',
-      }}
-    >
-      {validLinks.map((link, i) => {
-        const key  = (link.platform ?? '').toLowerCase();
-        const Icon = PLATFORM_ICONS[key];
-        if (!Icon) return null;
-
-        return (
-          <a
-            key={link.platform ?? i}
-            href={link.url!}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={link.platform}
-            style={{ color: 'var(--vault-text-secondary)', transition: 'color 0.2s ease, transform 0.2s ease', display: 'flex' }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.color = 'var(--accent)';
-              (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLAnchorElement).style.color = 'var(--vault-text-secondary)';
-              (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)';
-            }}
-          >
-            <Icon size={20} />
-          </a>
-        );
-      })}
-    </nav>
-  );
-}
-
-// ─── Display name with BlurText entrance ──────────────────────────────────────
+// ─── Display name ─────────────────────────────────────────────────────────────
 
 interface DisplayNameProps {
-  name?: string;
-  isMobile: boolean;
+  name?:         string;
   reducedMotion: boolean;
 }
 
-function DisplayName({ name, isMobile, reducedMotion }: DisplayNameProps): React.ReactElement {
-  const hasMountedRef   = useRef(false);
-  const [shouldAnimate, setShouldAnimate] = useState(false);
+function DisplayName({ name, reducedMotion }: DisplayNameProps): React.ReactElement {
+  const firedRef = useRef(false);
+  const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
-    if (!hasMountedRef.current && !reducedMotion) {
-      hasMountedRef.current = true;
-      setShouldAnimate(true);
+    if (!firedRef.current && !reducedMotion) {
+      firedRef.current = true;
+      setAnimate(true);
     }
   }, [reducedMotion]);
 
-  const fontSize      = isMobile ? '48px' : 'clamp(64px, 7vw, 80px)';
-  const letterSpacing = isMobile ? '-2px' : '-3px';
+  const words      = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  const firstLine  = words.slice(0, Math.max(1, words.length - 1)).join(' ');
+  const secondWord = words.length > 1 ? words[words.length - 1] : null;
 
-  const sharedStyle: React.CSSProperties = {
-    fontFamily:    'var(--vault-font-display)',
-    fontWeight:    700,
-    fontSize,
-    letterSpacing,
-    lineHeight:    1,
+  const lineBase: React.CSSProperties = {
     display:       'block',
+    fontFamily:    'var(--bella-font-serif)',
+    fontWeight:    300,
+    fontSize:      'clamp(44px, 6.5vw, 80px)',
+    letterSpacing: '-2px',
+    lineHeight:    0.95,
   };
 
   const nameBlock = (
     <div>
-      <span style={{ ...sharedStyle, color: 'var(--vault-text-primary)' }}>
-        {name ?? ''}
+      <span style={{ ...lineBase, fontStyle: 'normal', color: 'rgba(255,255,255,0.92)' }}>
+        {firstLine}
       </span>
-      <span
-        aria-hidden="true"
-        style={{
-          ...sharedStyle,
-          marginTop:          '10px',
-          color:              'transparent',
-          WebkitTextStroke:   '1px rgba(240,242,248,0.2)',
-        }}
-      >
-        {name ?? ''}
-      </span>
+      {secondWord && (
+        <span style={{ ...lineBase, fontStyle: 'italic', color: 'var(--bella-mid)' }}>
+          {secondWord}
+        </span>
+      )}
     </div>
   );
 
-  if (reducedMotion || !shouldAnimate) return nameBlock;
+  if (reducedMotion || !animate) return nameBlock;
 
   return (
     <motion.div
-      initial={{ opacity: 0, filter: 'blur(12px)', y: 20 }}
+      initial={{ opacity: 0, filter: 'blur(10px)', y: 16 }}
       animate={{ opacity: 1, filter: 'blur(0px)',  y: 0  }}
-      transition={{ duration: 0.8, ease: 'easeOut' }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
     >
       {nameBlock}
     </motion.div>
@@ -292,7 +74,7 @@ function DisplayName({ name, isMobile, reducedMotion }: DisplayNameProps): React
 // ─── Rotating subtitle ────────────────────────────────────────────────────────
 
 interface RotatingSubtitleProps {
-  roles: string[];
+  roles:         string[];
   reducedMotion: boolean;
 }
 
@@ -301,97 +83,136 @@ function RotatingSubtitle({ roles, reducedMotion }: RotatingSubtitleProps): Reac
 
   useEffect(() => {
     if (reducedMotion || roles.length <= 1) return;
-    const id = setInterval(() => {
-      setIndex((prev) => (prev + 1) % roles.length);
-    }, 2500);
+    const id = setInterval(() => setIndex((p) => (p + 1) % roles.length), 2500);
     return () => clearInterval(id);
   }, [reducedMotion, roles.length]);
 
-  if (roles.length === 1 && !roles[0]) return null;
+  if (!roles[0]) return null;
 
-  const baseStyle: React.CSSProperties = {
-    fontFamily:   'var(--vault-font-body)',
-    fontWeight:   300,
-    fontSize:     '18px',
-    color:        'var(--vault-text-secondary)',
-    marginTop:    '28px',
-    marginBottom: '32px',
-    display:      'block',
-    minHeight:    '28px',
+  const base: React.CSSProperties = {
+    fontFamily: 'var(--bella-font-body)',
+    fontWeight: 300,
+    fontSize:   '17px',
+    color:      'rgba(255,255,255,0.45)',
+    marginTop:  '24px',
+    display:    'block',
+    minHeight:  '26px',
   };
 
-  if (reducedMotion) {
-    return <span style={baseStyle}>{roles[0]}</span>;
-  }
+  if (reducedMotion) return <span style={base}>{roles[0]}</span>;
 
   return (
-    <span style={{ ...baseStyle, position: 'relative', display: 'block', overflow: 'hidden' }}>
+    <span style={{ ...base, position: 'relative', overflow: 'hidden' }}>
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
           key={roles[index]}
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0  }}
-          exit={{    opacity: 0, y: -12 }}
-          transition={{ duration: 0.4, ease: 'easeInOut' }}
+          exit={{    opacity: 0, y: -10 }}
+          transition={{ duration: 0.35, ease: 'easeInOut' }}
           style={{ display: 'block' }}
         >
-          {roles[index]}
+          <span style={{ fontFamily: 'var(--bella-font-serif)', fontStyle: 'italic' }}>
+            {roles[index]}
+          </span>
         </motion.span>
       </AnimatePresence>
     </span>
   );
 }
 
+// ─── Profile image card ───────────────────────────────────────────────────────
+
+interface ProfileCardProps {
+  image: string;
+  name:  string;
+}
+
+function ProfileCard({ image, name }: ProfileCardProps): React.ReactElement {
+  return (
+    <div
+      style={{
+        width:          '80%',
+        aspectRatio:    '1 / 1',
+        maxWidth:       '400px',
+        display:        'flex',
+        alignItems:     'center',
+        justifyContent: 'center',
+        flexShrink:     0,
+      }}
+    >
+      <Image
+        src={image}
+        alt={name}
+        width={400}
+        height={400}
+        quality={90}
+        priority
+        sizes="(max-width: 768px) 80vw, 400px"
+        style={{
+          objectFit:    'cover',
+          width:        '100%',
+          height:       '100%',
+          borderRadius: '73% 27% 80% 20% / 41% 62% 38% 59%',
+          border:       '4px solid rgba(255,255,255,0.85)',
+          boxShadow:    '0 0 20px rgba(255,255,255,0.5)',
+          display:      'block',
+        }}
+      />
+    </div>
+  );
+}
+
 // ─── CTA row ──────────────────────────────────────────────────────────────────
 
 function CtaRow(): React.ReactElement {
-  const [primaryHover, setPrimaryHover] = useState(false);
-  const [ghostHover,   setGhostHover]   = useState(false);
-
-  const scrollTo = (id: string): void => {
+  const [ghostHover, setGhostHover] = useState(false);
+  function scrollTo(id: string): void {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const baseBtn: React.CSSProperties = {
-    fontFamily:   'var(--vault-font-body)',
-    fontWeight:   500,
-    fontSize:     '14px',
-    padding:      '12px 28px',
-    borderRadius: '6px',
-    cursor:       'pointer',
-    lineHeight:   1,
-    transition:   'letter-spacing 0.2s ease',
-    border:       'none',
-  };
+  }
 
   return (
-    <div style={{ display: 'flex', gap: '12px' }}>
+    <div style={{ display: 'flex', gap: '12px', marginTop: '40px', flexWrap: 'wrap' }}>
       <button
         type="button"
         onClick={() => scrollTo('work')}
-        onMouseEnter={() => setPrimaryHover(true)}
-        onMouseLeave={() => setPrimaryHover(false)}
         style={{
-          ...baseBtn,
-          background:    'var(--accent)',
-          color:         '#ffffff',
-          letterSpacing: primaryHover ? '0.5px' : '0px',
+          fontFamily:   'var(--bella-font-body)',
+          fontWeight:   400,
+          fontSize:     '14px',
+          padding:      '12px 28px',
+          borderRadius: '4px',
+          cursor:       'pointer',
+          lineHeight:   1,
+          background:   'var(--accent)',
+          color:        'var(--bella-ink)',
+          border:       'none',
+          transition:   'opacity 0.2s ease',
         }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
         aria-label="View my work"
       >
         View work →
       </button>
+
       <button
         type="button"
         onClick={() => scrollTo('contact')}
         onMouseEnter={() => setGhostHover(true)}
         onMouseLeave={() => setGhostHover(false)}
         style={{
-          ...baseBtn,
-          background:    'transparent',
-          color:         'var(--accent)',
-          border:        '1px solid var(--accent-border)',
-          letterSpacing: ghostHover ? '0.5px' : '0px',
+          fontFamily:   'var(--bella-font-body)',
+          fontWeight:   400,
+          fontSize:     '14px',
+          padding:      '12px 28px',
+          borderRadius: '4px',
+          cursor:       'pointer',
+          lineHeight:   1,
+          background:   'transparent',
+          color:        ghostHover ? 'var(--accent)' : 'rgba(255,255,255,0.7)',
+          border:       ghostHover ? '1px solid var(--accent-border)' : '1px solid rgba(255,255,255,0.2)',
+          transition:   'color 0.25s ease, border-color 0.25s ease',
         }}
         aria-label="Get in touch"
       >
@@ -403,122 +224,145 @@ function CtaRow(): React.ReactElement {
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 
-export default function Hero({ data }: HeroProps): React.ReactElement {
-  const name        = data?.name;
-  const title       = data?.title;
-  const image       = data?.image;
-  const socialLinks = data?.socialLinks;
+export default function Hero({ data, available }: HeroProps): React.ReactElement {
+  const name  = data?.name;
+  const title = data?.title;
+  const image = data?.image;
 
   const reducedMotion = useReducedMotion() ?? false;
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    function checkMobile(): void { setIsMobile(window.innerWidth < 768); }
-    checkMobile();
-    window.addEventListener('resize', checkMobile, { passive: true });
-    return () => window.removeEventListener('resize', checkMobile);
+    function check(): void { setIsMobile(window.innerWidth < 768); }
+    check();
+    window.addEventListener('resize', check, { passive: true });
+    return () => window.removeEventListener('resize', check);
   }, []);
 
-  const roles = title?.includes(' & ')
+  const roles    = title?.includes(' & ')
     ? title.split(' & ').map((r) => r.trim())
     : [title ?? ''];
-
   const hasImage = isFilled(image);
+
+  // Grid is two-column only when portrait exists; auto right column lets card self-size
+  const gridCols = hasImage ? '1fr auto' : '1fr';
 
   return (
     <>
       <style>{`
-        @keyframes aurora-shift {
-          0%   { opacity: 0.7; transform: scale(1);    }
-          100% { opacity: 1;   transform: scale(1.04); }
-        }
-
-        #hero-content {
-          display: grid;
-          grid-template-columns: ${hasImage ? '1fr 1fr' : '1fr'};
-          align-items: center;
-          gap: 64px;
-          width: 100%;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .hero-left {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-        }
-
-        .hero-right {
-          display: flex;
+        #bella-hero {
+          position:        relative;
+          overflow:        hidden;
+          min-height:      100vh;
+          display:         flex;
+          align-items:     center;
           justify-content: center;
-          align-items: center;
+          padding:         80px 48px;
+          background:      var(--bella-ink);
         }
 
-        .hero-label {
-          font-family:    var(--vault-font-mono);
+        #bella-hero-content {
+          position:   relative;
+          z-index:    1;
+          display:    grid;
+          align-items: center;
+          gap:         72px;
+          width:       100%;
+          max-width:   1200px;
+        }
+
+        .bella-eyebrow {
+          display:       flex;
+          align-items:   center;
+          gap:           14px;
+          margin-bottom: 32px;
+        }
+        .bella-eyebrow-line {
+          width:       24px;
+          height:      1px;
+          background:  var(--accent);
+          flex-shrink: 0;
+        }
+        .bella-eyebrow-text {
+          font-family:    var(--bella-font-mono);
           font-size:      10px;
           font-weight:    500;
           letter-spacing: 2px;
           text-transform: uppercase;
           color:          var(--accent);
-          margin-bottom:  32px;
-          display:        block;
         }
 
+        /* Tablet — shrink portrait column */
+        @media (min-width: 769px) and (max-width: 960px) {
+          #bella-hero-content.bella-has-portrait {
+            gap: 48px !important;
+          }
+        }
+
+        /* Mobile — single column, centered */
         @media (max-width: 768px) {
-          #hero {
-            padding: 80px 24px 80px !important;
+          #bella-hero {
+            padding:     64px 24px !important;
             align-items: center !important;
           }
-          #hero-content {
+          #bella-hero-content {
             grid-template-columns: 1fr !important;
-            gap: 40px !important;
+            gap: 36px !important;
+            text-align: center;
           }
-          .hero-right {
-            order: -1;
+          .bella-eyebrow {
+            justify-content: center;
+          }
+          .bella-hero-left-col > div:last-child {
+            justify-content: center;
           }
         }
       `}</style>
 
-      <section
-        id="hero"
-        aria-label="Hero"
-        style={{
-          position:   'relative',
-          overflow:   'hidden',
-          minHeight:  '100vh',
-          display:    'flex',
-          alignItems: 'center',
-          padding:    isMobile ? '80px 24px' : '80px 48px',
-        }}
-      >
-        <Aurora isMobile={isMobile} reducedMotion={reducedMotion} />
-        <GridOverlay />
-
-        <div id="hero-content" style={{ position: 'relative', zIndex: 1 }}>
-          {/* Left: text content */}
-          <div className="hero-left">
-            <span className="hero-label">// creative portfolio</span>
-
-            <DisplayName
-              name={name}
-              isMobile={isMobile}
-              reducedMotion={reducedMotion}
+      <section id="bella-hero" aria-label="Hero">
+        {/* LightPillar — screen blend on dark bg gives crisp gold strands */}
+        {!reducedMotion && (
+          <div aria-hidden="true" style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            <LightPillar
+              topColor="#C8A96E"
+              bottomColor="#E8C050"
+              intensity={1.2}
+              rotationSpeed={0.2}
+              glowAmount={0.002}
+              pillarWidth={isMobile ? 5.0 : 3.5}
+              pillarHeight={0.4}
+              noiseIntensity={0.3}
+              pillarRotation={25}
+              interactive={false}
+              mixBlendMode="screen"
+              quality={isMobile ? 'low' : 'medium'}
             />
+          </div>
+        )}
 
+        <div
+          id="bella-hero-content"
+          className={hasImage ? 'bella-has-portrait' : ''}
+          style={{ gridTemplateColumns: gridCols }}
+        >
+          {/* Left: text */}
+          <div className="bella-hero-left-col">
+            <div className="bella-eyebrow" aria-hidden="true">
+              <span className="bella-eyebrow-line" />
+              <span className="bella-eyebrow-text">
+                {available ? 'Available for work' : (title ?? 'Portfolio')}
+              </span>
+            </div>
+
+            <DisplayName name={name} reducedMotion={reducedMotion} />
             <RotatingSubtitle roles={roles} reducedMotion={reducedMotion} />
-
-            <SocialLinks links={socialLinks} />
-
             <CtaRow />
           </div>
 
-          {/* Right: profile image */}
+          {/* Right: portrait — only renders if image exists, takes NO space otherwise */}
           {hasImage && (
-            <div className="hero-right">
-              <ProfileImageCard image={image!} name={name ?? ''} />
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <ProfileCard image={image!} name={name ?? ''} />
             </div>
           )}
         </div>

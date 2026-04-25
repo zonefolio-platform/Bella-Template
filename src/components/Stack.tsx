@@ -1,7 +1,7 @@
 'use client';
 
-import { useReducedMotion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,24 +26,20 @@ function seededRandom(seed: number): number {
 
 // ─── Particle dot ─────────────────────────────────────────────────────────────
 
-interface ParticleProps {
-  particle: ParticleData;
-}
-
-function Particle({ particle }: ParticleProps): React.ReactElement {
+function Particle({ particle }: { particle: ParticleData }): React.ReactElement {
   return (
     <div
       aria-hidden="true"
       style={{
-        position:     'absolute',
-        top:          particle.top,
-        left:         particle.left,
-        width:        '2px',
-        height:       '2px',
-        borderRadius: '50%',
-        background:   'var(--accent)',
-        opacity:      0.25,
-        animation:    `particle-float ${particle.duration}s ease-in-out ${particle.delay}s infinite alternate`,
+        position:      'absolute',
+        top:           particle.top,
+        left:          particle.left,
+        width:         '2px',
+        height:        '2px',
+        borderRadius:  '50%',
+        background:    'var(--accent)',
+        opacity:       0.2,
+        animation:     `bella-particle-float ${particle.duration}s ease-in-out ${particle.delay}s infinite alternate`,
         pointerEvents: 'none',
       }}
     />
@@ -56,7 +52,7 @@ function SectionLabel(): React.ReactElement {
   return (
     <p
       style={{
-        fontFamily:    'var(--vault-font-mono)',
+        fontFamily:    'var(--bella-font-mono)',
         fontSize:      '10px',
         fontWeight:    500,
         letterSpacing: '2px',
@@ -64,62 +60,11 @@ function SectionLabel(): React.ReactElement {
         color:         'var(--accent)',
         paddingLeft:   '10px',
         borderLeft:    '1px solid var(--accent)',
-        marginBottom:  '64px',
+        marginBottom:  '40px',
       }}
     >
       Stack
     </p>
-  );
-}
-
-// ─── Skill item ───────────────────────────────────────────────────────────────
-
-interface SkillItemProps {
-  skill: string;
-  index: number;
-}
-
-function SkillItem({ skill, index }: SkillItemProps): React.ReactElement {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display:    'flex',
-        alignItems: 'baseline',
-        gap:        '10px',
-        cursor:     'default',
-        transition: 'opacity 0.2s ease',
-        opacity:    hovered ? 0.6 : 1,
-      }}
-    >
-      <span
-        style={{
-          fontFamily:    'var(--vault-font-mono)',
-          fontSize:      '11px',
-          color:         'var(--vault-text-muted)',
-          letterSpacing: '0.5px',
-          lineHeight:    1,
-          userSelect:    'none',
-        }}
-      >
-        {String(index + 1).padStart(2, '0')}
-      </span>
-      <span
-        style={{
-          fontFamily:    'var(--vault-font-mono)',
-          fontSize:      'clamp(20px, 2.5vw, 28px)',
-          fontWeight:    400,
-          color:         'var(--accent)',
-          letterSpacing: '0.5px',
-          lineHeight:    1.2,
-        }}
-      >
-        {skill}
-      </span>
-    </div>
   );
 }
 
@@ -131,12 +76,12 @@ export default function Stack({ skills = [] }: StackProps): React.ReactElement {
   useEffect(() => { setMounted(true); }, []);
 
   const allParticles = useMemo<ParticleData[]>(() => {
-    return Array.from({ length: 60 }, (_, i) => ({
+    return Array.from({ length: 40 }, (_, i) => ({
       id:       i,
       top:      `${Math.floor(seededRandom(i * 3)     * 100)}%`,
       left:     `${Math.floor(seededRandom(i * 3 + 1) * 100)}%`,
-      duration: 3 + seededRandom(i * 3 + 2) * 5,
-      delay:    seededRandom(i * 7) * 5,
+      duration: 4 + seededRandom(i * 3 + 2) * 6,
+      delay:    seededRandom(i * 7) * 4,
     }));
   }, []);
 
@@ -145,72 +90,77 @@ export default function Stack({ skills = [] }: StackProps): React.ReactElement {
   return (
     <>
       <style>{`
-        @keyframes particle-float {
+        @keyframes bella-particle-float {
           from { transform: translateY(0); }
-          to   { transform: translateY(-20px); }
+          to   { transform: translateY(-18px); }
         }
 
         #stack {
-          padding: 96px 48px;
+          padding: clamp(72px, 8vw, 96px) clamp(24px, 4vw, 48px);
         }
 
-        .stack-particle--mobile-hidden {
-          display: block;
-        }
+        .bella-stack-particle-mobile-hide { display: block; }
 
         @media (max-width: 767px) {
-          #stack {
-            padding: 72px 24px !important;
-          }
-          .stack-particle--mobile-hidden {
-            display: none;
-          }
+          .bella-stack-particle-mobile-hide { display: none; }
         }
       `}</style>
 
       <section
         id="stack"
         aria-label="Tech stack"
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-        }}
+        style={{ position: 'relative', overflow: 'hidden' }}
       >
-        {/* Particle background */}
+        {/* Particle background — sparse, like dust on paper */}
         {particles.map((p, i) => (
           <div
             key={p.id}
-            className={i >= 30 ? 'stack-particle--mobile-hidden' : undefined}
+            className={i >= 20 ? 'bella-stack-particle-mobile-hide' : undefined}
           >
             <Particle particle={p} />
           </div>
         ))}
 
-        {/* Content */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           <SectionLabel />
+
+          {/* Editorial note in Cormorant italic */}
+          <p
+            style={{
+              fontFamily:   'var(--bella-font-serif)',
+              fontStyle:    'italic',
+              fontWeight:   300,
+              fontSize:     '18px',
+              color:        'var(--bella-mid)',
+              marginBottom: '48px',
+              lineHeight:   1.5,
+              maxWidth:     '520px',
+            }}
+          >
+            The tools I reach for.
+          </p>
 
           {skills.length > 0 ? (
             <div
               style={{
                 display:        'flex',
                 flexWrap:       'wrap',
+                gap:            '20px 32px',
                 justifyContent: 'center',
-                columnGap:      '48px',
-                rowGap:         '28px',
               }}
             >
               {skills.map((skill, i) => (
-                <SkillItem key={`${skill}-${i}`} skill={skill} index={i} />
+                <SkillTag key={`${skill}-${i}`} skill={skill} />
               ))}
             </div>
           ) : (
             <p
               style={{
-                fontFamily: 'var(--vault-font-mono)',
-                fontSize:   '13px',
-                color:      'var(--vault-text-muted)',
-                textAlign:  'center',
+                fontFamily:    'var(--bella-font-mono)',
+                fontSize:      '13px',
+                color:         'var(--bella-mid)',
+                textAlign:     'center',
+                letterSpacing: '0.3px',
               }}
             >
               No skills listed yet.
@@ -219,5 +169,30 @@ export default function Stack({ skills = [] }: StackProps): React.ReactElement {
         </div>
       </section>
     </>
+  );
+}
+
+// ─── Skill tag — DM Mono, no bg, no border, accent color ─────────────────────
+
+function SkillTag({ skill }: { skill: string }): React.ReactElement {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <span
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        fontFamily:    'var(--bella-font-mono)',
+        fontSize:      '14px',
+        fontWeight:    400,
+        color:         'var(--accent)',
+        opacity:       hovered ? 0.6 : 1,
+        cursor:        'default',
+        transition:    'opacity 0.2s ease',
+        letterSpacing: '0.2px',
+      }}
+    >
+      {skill}
+    </span>
   );
 }

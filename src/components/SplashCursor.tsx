@@ -63,14 +63,14 @@ export default function SplashCursor({
   PRESSURE = 0.1,
   PRESSURE_ITERATIONS = 20,
   CURL = 3,
-  SPLAT_RADIUS = 0.18,
+  SPLAT_RADIUS = 0.12,
   SPLAT_FORCE = 6000,
   SHADING = true,
   COLOR_UPDATE_SPEED = 10,
   BACK_COLOR = { r: 0, g: 0, b: 0 },
   TRANSPARENT = true,
   RAINBOW_MODE = false,
-  COLOR = '#3A7BFF',
+  COLOR = '#C8A96E',
 }: SplashCursorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 

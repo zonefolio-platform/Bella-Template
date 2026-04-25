@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { PortfolioData, Project } from '@/types';
 import { isFilled } from '@/lib/is-filled';
@@ -15,21 +15,215 @@ interface WorkProps {
 
 function SectionLabel(): React.ReactElement {
   return (
-    <p style={{
-      fontFamily: 'var(--vault-font-mono)', fontSize: '10px', fontWeight: 500,
-      letterSpacing: '2px', textTransform: 'uppercase', color: 'var(--accent)',
-      paddingLeft: '10px', borderLeft: '1px solid var(--accent)', marginBottom: '48px',
-    }}>
+    <p
+      style={{
+        fontFamily:    'var(--bella-font-mono)',
+        fontSize:      '10px',
+        fontWeight:    500,
+        letterSpacing: '2px',
+        textTransform: 'uppercase',
+        color:         'var(--accent)',
+        paddingLeft:   '10px',
+        borderLeft:    '1px solid var(--accent)',
+        marginBottom:  '56px',
+      }}
+    >
       Selected work
     </p>
   );
 }
 
-// ─── Card link ────────────────────────────────────────────────────────────────
+// ─── Project row ──────────────────────────────────────────────────────────────
 
-interface CardLinkProps { href: string; label: string; primary?: boolean; }
+interface ProjectRowProps {
+  project:   Project;
+  index:     number;
+  isFirst:   boolean;
+  reducedMotion: boolean;
+}
 
-function CardLink({ href, label, primary = false }: CardLinkProps): React.ReactElement {
+function ProjectRow({ project, index, isFirst, reducedMotion }: ProjectRowProps): React.ReactElement {
+  const [hovered, setHovered] = useState(false);
+  const isEven    = index % 2 === 1;   // even-indexed rows flip image to left
+  const hasImage  = isFilled(project.image);
+  const hasLive   = isFilled(project.liveUrl);
+  const hasSource = isFilled(project.githubUrl);
+  const hasTech   = isFilled(project.technologies) && (project.technologies?.length ?? 0) > 0;
+
+  // Column order flips per row so the image column always has the right width:
+  //   odd  → 72px  | 1fr | 35%   [number | content | image]
+  //   even → 35%   | 1fr | 72px  [image  | content | number]
+  //   no img→ 72px | 1fr         [number | content]
+  const gridCols = !hasImage
+    ? '72px 1fr'
+    : isEven
+      ? '35% 1fr 72px'
+      : '72px 1fr 35%';
+
+  const numEl = (
+    <div
+      className="bella-work-num"
+      aria-hidden="true"
+      style={{
+        fontFamily: 'var(--bella-font-serif)',
+        fontWeight: 300,
+        fontSize:   '48px',
+        color:      'var(--bella-border-mid)',
+        lineHeight: 1,
+        userSelect: 'none',
+        paddingTop: '4px',
+      }}
+    >
+      {String(index + 1).padStart(2, '0')}
+    </div>
+  );
+
+  const contentEl = (
+    <div className="bella-work-content">
+      <RowContent project={project} hasTech={hasTech} hasLive={hasLive} hasSource={hasSource} />
+    </div>
+  );
+
+  // Wrap image in a className div so CSS can hide it reliably on mobile
+  // (inline height: 220px would defeat :has() selectors and img display:none)
+  const imageEl = hasImage ? (
+    <div className="bella-work-img">
+      <RowImage
+        image={project.image}
+        name={project.name}
+        hovered={hovered}
+        reducedMotion={reducedMotion}
+      />
+    </div>
+  ) : null;
+
+  return (
+    <motion.article
+      initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, ease: 'easeOut' }}
+      viewport={{ once: true }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display:             'grid',
+        gridTemplateColumns: gridCols,
+        alignItems:          'start',
+        gap:                 '32px',
+        padding:             '40px 0',
+        borderTop:           isFirst ? 'none' : '1px solid var(--bella-border)',
+        position:            'relative',
+        cursor:              'default',
+        transition:          reducedMotion ? 'none' : 'background 0.25s ease',
+        background:          hovered ? 'var(--accent-light)' : 'transparent',
+      }}
+    >
+      {/* Accent line on hover — offset left so it sits outside the text column */}
+      {hovered && !reducedMotion && (
+        <div
+          className="bella-work-accent"
+          aria-hidden="true"
+          style={{
+            position:   'absolute',
+            left:       '-4px',
+            top:        0,
+            bottom:     0,
+            width:      '3px',
+            background: 'var(--accent)',
+          }}
+        />
+      )}
+
+      {/* Render in natural DOM order matching the grid column order */}
+      {isEven && hasImage ? (
+        <>{imageEl}{contentEl}{numEl}</>
+      ) : (
+        <>{numEl}{contentEl}{imageEl}</>
+      )}
+    </motion.article>
+  );
+}
+
+// ─── Row content ──────────────────────────────────────────────────────────────
+
+interface RowContentProps {
+  project:   Project;
+  hasTech:   boolean;
+  hasLive:   boolean;
+  hasSource: boolean;
+}
+
+function RowContent({ project, hasTech, hasLive, hasSource }: RowContentProps): React.ReactElement {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {/* Title */}
+      <h3
+        style={{
+          fontFamily:    'var(--bella-font-serif)',
+          fontWeight:    400,
+          fontSize:      '24px',
+          color:         'var(--bella-ink)',
+          letterSpacing: '-0.3px',
+          lineHeight:    1.2,
+          margin:        0,
+        }}
+      >
+        {project.name}
+      </h3>
+
+      {/* Description */}
+      {isFilled(project.description) && (
+        <p
+          style={{
+            fontFamily:     'var(--bella-font-body)',
+            fontWeight:     300,
+            fontSize:       '14px',
+            color:          'var(--bella-mid)',
+            lineHeight:     1.6,
+            margin:         0,
+            display:        '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow:       'hidden',
+          }}
+        >
+          {project.description}
+        </p>
+      )}
+
+      {/* Tech tags — DM Mono, no bg, separated by · */}
+      {hasTech && (
+        <p
+          style={{
+            fontFamily:    'var(--bella-font-mono)',
+            fontSize:      '11px',
+            color:         'var(--accent)',
+            margin:        0,
+            letterSpacing: '0.2px',
+          }}
+        >
+          {project.technologies!.filter(isFilled).join(' · ')}
+        </p>
+      )}
+
+      {/* Links */}
+      {(hasLive || hasSource) && (
+        <div style={{ display: 'flex', gap: '20px', marginTop: '4px' }}>
+          {hasLive && (
+            <RowLink href={project.liveUrl!} label="→ View live" />
+          )}
+          {hasSource && (
+            <RowLink href={project.githubUrl!} label="Source" />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Row link ─────────────────────────────────────────────────────────────────
+
+function RowLink({ href, label }: { href: string; label: string }): React.ReactElement {
   const [hovered, setHovered] = useState(false);
   return (
     <a
@@ -39,26 +233,11 @@ function CardLink({ href, label, primary = false }: CardLinkProps): React.ReactE
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        fontFamily:     'var(--vault-font-mono)',
-        fontSize:       '12px',
-        letterSpacing:  '0.3px',
-        padding:        '7px 14px',
-        borderRadius:   '6px',
+        fontFamily:    'var(--bella-font-mono)',
+        fontSize:      '12px',
+        color:         hovered ? 'var(--bella-ink)' : 'var(--bella-mid)',
         textDecoration: 'none',
-        display:        'inline-flex',
-        alignItems:     'center',
-        transition:     'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
-        ...(primary
-          ? {
-              background:  hovered ? 'var(--accent)' : 'transparent',
-              border:      '1px solid var(--accent-border)',
-              color:       hovered ? '#ffffff'         : 'var(--accent)',
-            }
-          : {
-              background:  hovered ? 'var(--vault-surface)' : 'transparent',
-              border:      '1px solid var(--vault-border)',
-              color:       hovered ? 'var(--vault-text-primary)' : 'var(--vault-text-secondary)',
-            }),
+        transition:    'color 0.2s ease',
       }}
     >
       {label}
@@ -66,134 +245,51 @@ function CardLink({ href, label, primary = false }: CardLinkProps): React.ReactE
   );
 }
 
-// ─── Project card ─────────────────────────────────────────────────────────────
+// ─── Row image ────────────────────────────────────────────────────────────────
 
-function ProjectCard({ project, isFeatured = false }: { project: Project; isFeatured?: boolean }): React.ReactElement {
-  const [hovered, setHovered] = useState(false);
-  const hasImage = isFilled(project.image);
-
-  return (
-    <article
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background:    'var(--vault-surface)',
-        border:        hovered ? '1px solid var(--accent-border)' : '1px solid var(--vault-border)',
-        borderRadius:  '16px',
-        overflow:      'hidden',
-        display:       'flex',
-        flexDirection: 'column',
-        height:        '100%',
-        transition:    'border-color 0.2s ease, box-shadow 0.2s ease',
-        boxShadow:     hovered ? '0 0 24px var(--highlight-glow)' : 'none',
-      }}
-    >
-      {hasImage && (
-        <div style={{ width: '100%', aspectRatio: isFeatured ? '21 / 9' : '16 / 9', overflow: 'hidden', flexShrink: 0 }}>
-          <img
-            src={project.image!} alt={project.name ?? ''} loading="lazy" decoding="async"
-            style={{
-              width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-              transition: 'transform 0.3s ease',
-              transform: hovered ? 'scale(1.02)' : 'scale(1)',
-            }}
-          />
-        </div>
-      )}
-
-      <div style={{ padding: isFeatured ? '24px 28px' : '18px 20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <h3 style={{
-          fontFamily: 'var(--vault-font-display)', fontWeight: 500,
-          fontSize: isFeatured ? '24px' : '18px', color: 'var(--vault-text-primary)',
-          marginBottom: '8px', marginTop: 0, lineHeight: 1.2,
-        }}>
-          {project.name}
-        </h3>
-
-        {isFilled(project.description) && (
-          <p style={{
-            fontFamily: 'var(--vault-font-body)', fontWeight: 300, fontSize: '14px',
-            color: 'var(--vault-text-secondary)', marginBottom: '12px', marginTop: 0,
-            lineHeight: 1.6, display: '-webkit-box',
-            WebkitLineClamp: isFeatured ? 3 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          }}>
-            {project.description}
-          </p>
-        )}
-
-        {isFilled(project.technologies) && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-            {project.technologies!.filter(isFilled).map((tech) => (
-              <span key={tech} style={{ fontFamily: 'var(--vault-font-mono)', fontSize: '11px', color: 'var(--accent)' }}>
-                {tech}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {(isFilled(project.liveUrl) || isFilled(project.githubUrl)) && (
-          <div style={{ display: 'flex', gap: '16px', marginTop: 'auto', paddingTop: '8px' }}>
-            {isFilled(project.liveUrl)   && <CardLink href={project.liveUrl!}   label="View live →" primary />}
-            {isFilled(project.githubUrl) && <CardLink href={project.githubUrl!} label="Source" />}
-          </div>
-        )}
-      </div>
-    </article>
-  );
+interface RowImageProps {
+  image?:        string;
+  name?:         string;
+  hovered:       boolean;
+  reducedMotion: boolean;
 }
 
-// ─── Pagination dots ──────────────────────────────────────────────────────────
-
-function PaginationDots({ count, active }: { count: number; active: number }): React.ReactElement {
+// RowImage only renders when image exists — the column is never created otherwise.
+function RowImage({ image, name, hovered, reducedMotion }: RowImageProps): React.ReactElement {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '20px' }}>
-      {Array.from({ length: count }, (_, i) => (
-        <div
-          key={i}
-          style={{
-            height:     '5px',
-            width:      i === active ? '20px' : '5px',
-            borderRadius: '3px',
-            background: i === active ? 'var(--accent)' : 'var(--vault-border-mid)',
-            transition: 'width 0.3s ease, background 0.3s ease',
-          }}
-        />
-      ))}
+    <div
+      style={{
+        width:        '100%',
+        height:       '220px',
+        borderRadius: '8px',
+        overflow:     'hidden',
+        flexShrink:   0,
+      }}
+    >
+      <img
+        src={image!}
+        alt={name ?? ''}
+        loading="lazy"
+        decoding="async"
+        style={{
+          width:      '100%',
+          height:     '100%',
+          objectFit:  'cover',
+          display:    'block',
+          filter:     hovered && !reducedMotion ? 'saturate(0.3) sepia(0.2)' : 'none',
+          transition: reducedMotion ? 'none' : 'filter 0.35s ease',
+        }}
+      />
     </div>
   );
 }
+
 
 // ─── Work section ─────────────────────────────────────────────────────────────
 
 export default function Work({ data }: WorkProps): React.ReactElement {
   const projects      = (data?.projects ?? []).filter((p) => isFilled(p.name));
   const reducedMotion = useReducedMotion() ?? false;
-  const sliderRef     = useRef<HTMLDivElement>(null);
-  const [activeSlide, setActiveSlide] = useState(0);
-
-  if (projects.length === 0) {
-    return (
-      <section id="work" aria-label="Selected work" style={{ padding: '96px 48px', maxWidth: '1200px', margin: '0 auto' }}>
-        <SectionLabel />
-        <p style={{ fontFamily: 'var(--vault-font-body)', fontSize: '15px', color: 'var(--vault-text-secondary)' }}>
-          No projects to display yet.
-        </p>
-      </section>
-    );
-  }
-
-  const featuredIdx = projects.findIndex((p) => isFilled(p.image));
-  const pinnedIdx   = featuredIdx !== -1 ? featuredIdx : 0;
-  const featured    = projects[pinnedIdx];
-  const rest        = projects.filter((_, i) => i !== pinnedIdx);
-
-  function onSliderScroll(): void {
-    const slider = sliderRef.current;
-    if (!slider || rest.length <= 1) return;
-    const maxScroll = slider.scrollWidth - slider.clientWidth;
-    if (maxScroll === 0) return;
-    setActiveSlide(Math.round((slider.scrollLeft / maxScroll) * (rest.length - 1)));
-  }
 
   return (
     <>
@@ -204,126 +300,52 @@ export default function Work({ data }: WorkProps): React.ReactElement {
           margin: 0 auto;
         }
 
-        .slider-label {
-          font-family: var(--vault-font-mono);
-          font-size: 10px;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          color: var(--vault-text-muted);
-          margin-bottom: 20px;
-          display: block;
-        }
-
-        .work-slider-outer {
-          position: relative;
-        }
-
-        /* Left fade */
-        .work-slider-outer::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; bottom: 0;
-          width: 72px;
-          background: linear-gradient(to right, var(--vault-bg), transparent);
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        /* Right fade */
-        .work-slider-outer::after {
-          content: '';
-          position: absolute;
-          top: 0; right: 0; bottom: 0;
-          width: 72px;
-          background: linear-gradient(to left, var(--vault-bg), transparent);
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        .work-slider {
-          display: flex;
-          gap: 20px;
-          overflow-x: auto;
-          scroll-snap-type: x mandatory;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
-          padding-bottom: 4px;
-        }
-        .work-slider::-webkit-scrollbar { display: none; }
-
-        .work-slide {
-          flex: 0 0 380px;
-          scroll-snap-align: center;
-        }
-
-        /*
-          Spacer elements at both ends — avoids the browser bug where
-          padding-inline-end on overflow:auto is ignored for scroll extent.
-          This makes every card (including the last) fully centerable.
-        */
-        .work-slider-spacer {
-          flex: 0 0 calc(50% - 190px);
-          pointer-events: none;
-        }
-
         @media (max-width: 768px) {
-          .work-slide          { flex: 0 0 78%; }
-          .work-slider-spacer  { flex: 0 0 11%; }
-          .work-slider-outer::before,
-          .work-slider-outer::after { width: 40px; }
-        }
-
-        @media (max-width: 480px) {
-          .work-slide         { flex: 0 0 85%; }
-          .work-slider-spacer { flex: 0 0 7.5%; }
+          #work article {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+            padding: 28px 0 !important;
+          }
+          /* Consistent mobile stack: number → image → content
+             regardless of even/odd DOM order */
+          .bella-work-num     { order: 0; }
+          .bella-work-img     { order: 1; display: block !important; }
+          .bella-work-content { order: 2; }
+          /* Image height on mobile */
+          .bella-work-img > div {
+            height: 200px !important;
+            border-radius: 10px !important;
+          }
+          /* Accent line irrelevant on touch */
+          .bella-work-accent  { display: none !important; }
         }
       `}</style>
 
       <section id="work" aria-label="Selected work">
         <SectionLabel />
 
-        {/* Featured — full width */}
-        <motion.div
-          initial={reducedMotion ? false : { opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          viewport={{ once: true }}
-          style={{ marginBottom: rest.length > 0 ? '48px' : 0 }}
-        >
-          <ProjectCard project={featured} isFeatured />
-        </motion.div>
-
-        {/* Rest — centered horizontal scroll slider */}
-        {rest.length > 0 && (
-          <motion.div
-            initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
-            viewport={{ once: true }}
+        {projects.length === 0 ? (
+          <p
+            style={{
+              fontFamily: 'var(--bella-font-body)',
+              fontSize:   '15px',
+              color:      'var(--bella-mid)',
+            }}
           >
-            <span className="slider-label">More projects</span>
-
-            <div className="work-slider-outer">
-              <div
-                ref={sliderRef}
-                className="work-slider"
-                onScroll={onSliderScroll}
-              >
-                <div className="work-slider-spacer" aria-hidden="true" />
-                {rest.map((project, i) => (
-                  <div key={project.name ?? i} className="work-slide">
-                    <ProjectCard project={project} />
-                  </div>
-                ))}
-                <div className="work-slider-spacer" aria-hidden="true" />
-              </div>
-            </div>
-
-            {/* Pagination dots */}
-            {rest.length > 1 && (
-              <PaginationDots count={rest.length} active={activeSlide} />
-            )}
-          </motion.div>
+            No projects to display yet.
+          </p>
+        ) : (
+          <div>
+            {projects.map((project, i) => (
+              <ProjectRow
+                key={project.name ?? i}
+                project={project}
+                index={i}
+                isFirst={i === 0}
+                reducedMotion={reducedMotion}
+              />
+            ))}
+          </div>
         )}
       </section>
     </>
